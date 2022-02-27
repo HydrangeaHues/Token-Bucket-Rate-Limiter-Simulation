@@ -7,55 +7,55 @@ class RequestTokenBucket(object):
 
     Attributes
     ----------
-    maxTokens : int
+    max_tokens : int
         The maximum number of tokens the RequestTokenBucket object is able to hold at any given time.
         Defaults to 10.
-    refillRate : int
+    refill_rate : int
         The number of seconds it takes for a single token to be refilled into the RequestTokenBucket object.
         Defaults to 5.
-    lastRequestTimestamp : int
+    last_request_timestamp : int
         A timestamp of the last time a request was allowed by the bucket, represented as seconds since epoch.
-    currentCount : int
+    current_count : int
         The current number of tokens in the bucket.
     lock : Lock
         A Lock object that allows the bucket to be locked when multiple threads might be trying to make requests.
 
     Methods
     -------
-    calculateCurrentTokens():
-        Determine the number of tokens a RequestTokenBucket object should have and set the object's currentCount attribute to that value.
-        Return without setting the currentCount value if the RequestTokenBucket object does not have a lastRequestTimestamp value, as
+    calculate_current_tokens():
+        Determine the number of tokens a RequestTokenBucket object should have and set the object's current_count attribute to that value.
+        Return without setting the current_count value if the RequestTokenBucket object does not have a last_request_timestamp value, as
         we assume this to mean no requests have been made to the bucket yet, and buckets are full of tokens when instantiated.
     
-    printBucketSummary():
+    print_bucket_summary():
         Print a formatted summary of the max token capacity, refill rate, current token count, and last request time of a RequestTokenBucket object.
     """
 
-    def __init__(self, maxTokens=10, refillRate=5):
+    def __init__(self, max_tokens=10, refill_rate=5):
         """
         Constructor for RequestTokenBucket objects.
-        Initialize the lastRequestTimestamp attribute as None because we could not have made a request to a bucket that did not exist before.
-        Initialize the currentCount attribute to the value of maxTokens, as we want the RequestTokenBucket object to be full when instantiated.
+        Initialize the last_request_timestamp attribute as None because we could not have made a request to a bucket that did not exist before.
+        Initialize the current_count attribute to the value of max_tokens, as we want the RequestTokenBucket object to be full when instantiated.
 
         Parameters
         ----------
-        maxTokens : int
+        max_tokens : int
             The maximum number of tokens the RequestTokenBucket object is able to hold at any given time.
             Defaults to 10.
-        refillRate : int
+        refill_rate : int
             The number of seconds it takes for a single token to be refilled into the RequestTokenBucket object.
             Defaults to 5.
         """
-        self.maxTokens = maxTokens
-        self.refillRate = refillRate
-        self.lastRequestTimestamp = None
-        self.currentCount = maxTokens
+        self.max_tokens = max_tokens
+        self.refill_rate = refill_rate
+        self.last_request_timestamp = None
+        self.current_count = max_tokens
         self.lock = threading.Lock()
 
-    def calculateCurrentTokens(self):
+    def calculate_current_tokens(self):
         """
-        Determine the number of tokens a RequestTokenBucket object should have and set the object's currentCount attribute to that value.
-        Return without setting the currentCount value if the RequestTokenBucket object does not have a lastRequestTimestamp value, as
+        Determine the number of tokens a RequestTokenBucket object should have and set the object's current_count attribute to that value.
+        Return without setting the current_count value if the RequestTokenBucket object does not have a last_request_timestamp value, as
         we assume this to mean no requests have been made to the bucket yet, and buckets are full of tokens when instantiated.
 
         Parameters
@@ -66,12 +66,12 @@ class RequestTokenBucket(object):
         -------
         None
         """
-        if self.lastRequestTimestamp is None:
+        if self.last_request_timestamp is None:
             return
-        tokensSinceLastRequest = self.__timeSinceLastRequest() // self.refillRate
-        self.currentCount = min(self.maxTokens, self.currentCount + tokensSinceLastRequest)
+        tokens_since_last_request = self.__time_since_last_request() // self.refill_rate
+        self.current_count = min(self.max_tokens, self.current_count + tokens_since_last_request)
     
-    def printBucketSummary(self):
+    def print_bucket_summary(self):
         """
         Print a formatted summary of the max token capacity, refill rate, current token count, and last request time of a RequestTokenBucket object.
 
@@ -83,13 +83,13 @@ class RequestTokenBucket(object):
         -------
         None
         """
-        print("Max Token Capacity: {}".format(self.maxTokens))
-        print("Refill Rate: {}".format(self.refillRate))
-        print("Current Token Count: {}".format(self.currentCount))
-        print("Last Request Time: {}".format(self.lastRequestTimestamp))
+        print("Max Token Capacity: {}".format(self.max_tokens))
+        print("Refill Rate: {}".format(self.refill_rate))
+        print("Current Token Count: {}".format(self.current_count))
+        print("Last Request Time: {}".format(self.last_request_timestamp))
 
     @classmethod
-    def __getCurrentTimeInSeconds(cls):
+    def __get_current_time_in_seconds(cls):
         """
         Return the current time represented in seconds since epoch.
 
@@ -103,7 +103,7 @@ class RequestTokenBucket(object):
         """
         return int(round(time.time()))
     
-    def __timeSinceLastRequest(self):
+    def __time_since_last_request(self):
         """
         Return an integer representing the number of seconds since the last request made to a RequestTokenBucket object.
 
@@ -115,7 +115,7 @@ class RequestTokenBucket(object):
         -------
         An integer representing the number of seconds since the last request made to a RequestTokenBucket object.
         """
-        return self.__getCurrentTimeInSeconds() - self.lastRequestTimestamp
+        return self.__get_current_time_in_seconds() - self.last_request_timestamp
     
 
 class TokenBucketRateLimiter(object):
@@ -124,16 +124,16 @@ class TokenBucketRateLimiter(object):
 
     Attributes
     ----------
-    rateLimiterDict : Dictionary
+    rate_limiter_dict : Dictionary
         A dictionary that maps an account ID (key) to a RequestTokenBucket object (value).
 
     Methods
     -------
-    addAccount(accountID, requestTokenBucket):
-        Add the accountID and requestTokenBucket as a key-value pair to the TokenBucketRateLimiter object's rateLimiterDict.
+    add_account(account_id, request_token_bucket):
+        Add the account_id and request_token_bucket as a key-value pair to the TokenBucketRateLimiter object's rate_limiter_dict.
 
     
-    allowRequestToService(accountID):
+    allow_request_to_service(account_id):
         Determine if a request should be allowed based on the current token count of a bucket.
         Print information about the bucket being requested and if the request will be allowed.
         If allowed, perform the request in a thread-safe manner.
@@ -147,64 +147,64 @@ class TokenBucketRateLimiter(object):
         ----------
         None
         """
-        self.ratelimiterDict = {}
+        self.rate_limiter_dict = {}
 
-    def addAccount(self, accountID, requestTokenBucket):
+    def add_account(self, account_id, request_token_bucket):
         """
-        Add the accountID and requestTokenBucket as a key-value pair to the TokenBucketRateLimiter object's rateLimiterDict.
+        Add the account_id and request_token_bucket as a key-value pair to the TokenBucketRateLimiter object's rate_limiter_dict.
 
         Parameters
         ----------
-        accountID : int
+        account_id : int
             The ID of the account we are working with.
-        requestTokenBucket : RequestTokenBucket
-            The token bucket we want to use to determine if requests from the account associated with accountID should be allowed or not.
+        request_token_bucket : RequestTokenBucket
+            The token bucket we want to use to determine if requests from the account associated with account_id should be allowed or not.
 
         Returns
         -------
         None
         """
-        self.ratelimiterDict[accountID] = requestTokenBucket
+        self.rate_limiter_dict[account_id] = request_token_bucket
 
-    def allowRequestToService(self, accountID):
+    def allow_request_to_service(self, account_id):
         """
-        Calculate the current number of tokens in the bucket associated with accountID, allow the request if there are enough tokens to do so, reject the request if not.
+        Calculate the current number of tokens in the bucket associated with account_id, allow the request if there are enough tokens to do so, reject the request if not.
         Print information regarding which thread is making a request, which bucket they are requesting, and the current token count of the bucket being requested.
 
         Parameters
         ----------
-        accountID : int
+        account_id : int
             The ID of the account we are working with.
 
         Returns
         -------
         A boolean denoting if the request was allowed or not.
         """
-        tokenBucket = self.ratelimiterDict[accountID]
+        token_bucket = self.rate_limiter_dict[account_id]
         # Lock the bucket so that we do not have concurrency issues that result in us bypassing the rate limit.
-        with tokenBucket.lock:
-            tokenBucket.calculateCurrentTokens()
-            print("**** {} is making a request to bucket {}****".format(threading.current_thread().name, accountID))
-            print("Current Tokens for Bucket {}: {}".format(accountID, tokenBucket.currentCount))
+        with token_bucket.lock:
+            token_bucket.calculate_current_tokens()
+            print("**** {} is making a request to bucket {}****".format(threading.current_thread().name, account_id))
+            print("Current Tokens for Bucket {}: {}".format(account_id, token_bucket.current_count))
             # Allow the request if the token bucket has at least 1 token.
-            # If the request is allowed, we will update the bucket's lastRequestTimestamp and remove a token from the bucket.
-            if tokenBucket.currentCount > 0:
+            # If the request is allowed, we will update the bucket's last_request_timestamp and remove a token from the bucket.
+            if token_bucket.current_count > 0:
                 print("Processing request\n")
-                tokenBucket.lastRequestTimestamp = int(round(time.time()))
-                tokenBucket.currentCount -= 1
+                token_bucket.last_request_timestamp = int(round(time.time()))
+                token_bucket.current_count -= 1
                 return True
             else:
-                print("Not enough tokens to process request. Please try again in {} seconds.\n".format(tokenBucket.refillRate))
+                print("Not enough tokens to process request. Please try again in {} seconds.\n".format(token_bucket.refill_rate))
         return False
         
 
-def simulateRequests(rateLimiter):
+def simulate_requests(rate_limiter):
     """
     Takes in a TokenBucketRateLimiter object and simulates making requests to buckets within that object for 60 seconds.
 
     Parameters
     ----------
-    rateLimiter : TokenBucketRateLimiter
+    rate_limiter : TokenBucketRateLimiter
         A TokenBucketRateLimiter containing buckets we want to simulate the rate limiting capabilities of.
 
     Returns
@@ -213,28 +213,28 @@ def simulateRequests(rateLimiter):
     """
     end_time = time.time() + 60
     while time.time() < end_time:
-        rateLimiter.allowRequestToService(1)
-        rateLimiter.allowRequestToService(2)
+        rate_limiter.allow_request_to_service(1)
+        rate_limiter.allow_request_to_service(2)
         time.sleep(3)
 
-rateLimiter = TokenBucketRateLimiter()
+rate_limiter = TokenBucketRateLimiter()
 
-maxTokensInput = int(input("Please specify the maximum number of tokens the first bucket should have: "))
-refillRateInput = int(input("Please specify the rate in seconds at which a single token should be refilled into the first bucket: "))
+max_tokens_input = int(input("Please specify the maximum number of tokens the first bucket should have: "))
+refill_rate_input = int(input("Please specify the rate in seconds at which a single token should be refilled into the first bucket: "))
 
-rateLimiter.addAccount(1, RequestTokenBucket(maxTokensInput, refillRateInput))
+rate_limiter.add_account(1, RequestTokenBucket(max_tokens_input, refill_rate_input))
 print("**** Summary of Specs for Token Bucket One ****")
-rateLimiter.ratelimiterDict[1].printBucketSummary()
+rate_limiter.rate_limiter_dict[1].print_bucket_summary()
 print("\n")
 
-rateLimiter.addAccount(2, RequestTokenBucket(5, 10))
+rate_limiter.add_account(2, RequestTokenBucket(5, 10))
 print("**** Summary of Specs for Token Bucket Two ****")
-rateLimiter.ratelimiterDict[2].printBucketSummary()
+rate_limiter.rate_limiter_dict[2].print_bucket_summary()
 print("\n")
 
 if __name__=="__main__":
-    thread1 = threading.Thread(target=simulateRequests, args=(rateLimiter,))
-    thread2 = threading.Thread(target=simulateRequests, args=(rateLimiter,))
+    thread1 = threading.Thread(target=simulate_requests, args=(rate_limiter,))
+    thread2 = threading.Thread(target=simulate_requests, args=(rate_limiter,))
     thread1.start()
     thread2.start()
     thread1.join()
